@@ -1,0 +1,22 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.poetry
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=django-insecure-change-this-in-production
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=recruiterAI@12312
+      - DB_HOST=db.ummbhscjtbrynnicptpm.supabase.co
+      - DB_PORT=5432
+      - DB_SSL_MODE=require
+
