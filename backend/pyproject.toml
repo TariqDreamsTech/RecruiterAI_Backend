@@ -6,6 +6,7 @@ authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 packages = [{include = "config"}, {include = "apps"}]
 include = ["manage.py", "requirements.txt"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -17,6 +18,8 @@ psycopg2-binary = "^2.9.9"
 django-cors-headers = "^4.3.1"
 Pillow = "^10.1.0"
 gunicorn = "^21.2.0"
+supabase = "^2.18.1"
+gotrue = "^2.12.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"
