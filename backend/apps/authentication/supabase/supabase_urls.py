@@ -3,9 +3,9 @@ URL Configuration for Supabase Authentication
 """
 
 from django.urls import path
-from .supabase import supabase_views
+from . import supabase_views
 
-app_name = "authentication"
+app_name = "supabase_auth"
 
 urlpatterns = [
     # Authentication endpoints
