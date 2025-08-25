@@ -412,6 +412,81 @@ class SupabaseAuthService:
                 "message": f"Failed to generate OAuth URL for {provider}",
             }
 
+    def verify_confirmation_token(self, token_hash: str, confirmation_type: str = "signup") -> Dict[str, Any]:
+        """
+        Verify email confirmation token from Supabase
+
+        Args:
+            token_hash: Token hash from confirmation email
+            confirmation_type: Type of confirmation (signup, recovery, etc.)
+
+        Returns:
+            Dict containing verification result
+        """
+        try:
+            # Verify the token with Supabase
+            response = self.supabase.auth.verify_otp({
+                "token_hash": token_hash,
+                "type": confirmation_type
+            })
+
+            if response.user:
+                return {
+                    "success": True,
+                    "user": response.user.__dict__ if hasattr(response.user, "__dict__") else response.user,
+                    "user_id": response.user.id,
+                    "message": "Email confirmation successful",
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "invalid_token",
+                    "message": "Invalid or expired confirmation token",
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "Failed to verify confirmation token",
+            }
+
+    def get_user_session(self, user_id: str) -> Dict[str, Any]:
+        """
+        Get user session and tokens
+
+        Args:
+            user_id: User's ID
+
+        Returns:
+            Dict containing session data
+        """
+        try:
+            # Get user session from Supabase
+            response = self.supabase.auth.get_session()
+            
+            if response.session:
+                return {
+                    "success": True,
+                    "access_token": response.session.access_token,
+                    "refresh_token": response.session.refresh_token,
+                    "expires_in": response.session.expires_in,
+                    "expires_at": response.session.expires_at,
+                    "token_type": response.session.token_type,
+                    "message": "Session retrieved successfully",
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "no_session",
+                    "message": "No active session found",
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "Failed to retrieve user session",
+            }
+
 
 # Global instance
 supabase_auth = SupabaseAuthService()

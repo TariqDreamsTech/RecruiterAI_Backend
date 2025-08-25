@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.openapi import OpenApiTypes
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from .supabase_auth import supabase_auth
 from .supabase_serializers import (
@@ -467,3 +469,141 @@ def supabase_verify_token(request):
             {"valid": False, "error": result["error"], "message": result["message"]},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+@extend_schema(
+    tags=["Supabase Authentication"],
+    summary="Email Confirmation Callback",
+    description="Handle email confirmation callback from Supabase with auto token fetch and user verification",
+    parameters=[
+        OpenApiParameter(
+            name="token_hash",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Token hash from confirmation email",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="type",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Confirmation type (signup, recovery, etc.)",
+            required=True,
+        ),
+    ],
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "message": {"type": "string"},
+                "user": {"type": "object"},
+                "access_token": {"type": "string"},
+                "refresh_token": {"type": "string"},
+            }
+        },
+        400: {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "error": {"type": "string"},
+                "message": {"type": "string"},
+            }
+        }
+    },
+)
+@api_view(["GET", "OPTIONS"])  # Add OPTIONS method for CORS preflight
+@permission_classes([AllowAny])
+@csrf_exempt
+def email_confirmation_callback(request):
+    """
+    Handle email confirmation callback from Supabase
+    This endpoint automatically fetches the access token and verifies the user
+    """
+    token_hash = request.GET.get("token_hash")
+    confirmation_type = request.GET.get("type", "signup")
+    
+    if not token_hash:
+        return Response(
+            {
+                "success": False,
+                "error": "missing_token",
+                "message": "Token hash is required for confirmation",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    try:
+        # Verify the confirmation token with Supabase
+        result = supabase_auth.verify_confirmation_token(token_hash, confirmation_type)
+        
+        if result["success"]:
+            # Get user session and tokens
+            session_result = supabase_auth.get_user_session(result["user_id"])
+            
+            if session_result["success"]:
+                response_data = {
+                    "success": True,
+                    "message": "Email confirmed successfully! You can now log in to your account.",
+                    "user": result.get("user", {}),
+                    "access_token": session_result.get("access_token"),
+                    "refresh_token": session_result.get("refresh_token"),
+                }
+                
+                return Response(response_data, status=status.HTTP_200_OK)
+            else:
+                # User confirmed but no session available
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Email confirmation successful! Please log in to your account.",
+                        "user": result.get("user", {}),
+                    },
+                    status=status.HTTP_200_OK,
+                )
+        else:
+            return Response(
+                {
+                    "success": False,
+                    "error": result.get("error", "verification_failed"),
+                    "message": result.get("message", "Email confirmation failed"),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+    except Exception as e:
+        return Response(
+            {
+                "success": False,
+                "error": "verification_error",
+                "message": f"An error occurred during confirmation: {str(e)}",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@extend_schema(
+    tags=["Supabase Authentication"],
+    summary="CORS Test Endpoint",
+    description="Simple endpoint to test CORS configuration",
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "message": {"type": "string"},
+                "cors_test": {"type": "boolean"},
+            }
+        }
+    },
+)
+@api_view(["GET", "OPTIONS"])
+@permission_classes([AllowAny])
+def cors_test(request):
+    """Simple endpoint to test CORS configuration"""
+    return Response(
+        {
+            "message": "CORS is working!",
+            "cors_test": True,
+        },
+        status=status.HTTP_200_OK,
+    )

@@ -50,9 +50,6 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-logs/
-media/
-staticfiles/
 *.sqlite3
 .env.local
 .env.development
@@ -60,6 +57,5 @@ staticfiles/
 .env.production
 
 # Docker
-Dockerfile*
 docker-compose*
 .dockerignore

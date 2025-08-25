@@ -3,20 +3,71 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.poetry
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "mkdir -p /app/logs && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
     ports:
       - "8000:8000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - backend_network
     environment:
+      # Django Settings
       - SECRET_KEY=django-insecure-change-this-in-production
       - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0b72c5ff662f.ngrok-free.app
+      
+      # Database Settings
       - DB_ENGINE=django.db.backends.postgresql
       - DB_NAME=postgres
-      - DB_USER=postgres
+      - DB_USER=postgres.ummbhscjtbrynnicptpm
       - DB_PASSWORD=recruiterAI@12312
-      - DB_HOST=db.ummbhscjtbrynnicptpm.supabase.co
-      - DB_PORT=5432
+      - DB_HOST=aws-1-ap-southeast-1.pooler.supabase.com
+      - DB_PORT=6543
       - DB_SSL_MODE=require
+      
+      # Supabase Authentication Settings
+      - SUPABASE_URL=https://ummbhscjtbrynnicptpm.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbWJoc2NqdGJyeW5uaWNwdHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MDU2MDUsImV4cCI6MjA3MTI4MTYwNX0.iaV2RR3ZbIhLvDgIiHh6CgQOGx8HVhyH0sJPKJLgM5s
+      - SUPABASE_SERVICE_KEY=your-supabase-service-key
+      - SUPABASE_JWT_SECRET=XRddIryV3mUV1ZooEhEGFfr3otK1DHK+OIEbR7xr6wd7lA68e9Jxhh+kvlmDB4ilqwZ/3XqbbN8AJIMRnzGAnQ==
+      
+      # Email Settings
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USE_TLS=True
+      - EMAIL_HOST_USER=your-email@gmail.com
+      - EMAIL_HOST_PASSWORD=your-app-password
+      
+      # Redis Settings (for caching and background tasks)
+      - REDIS_URL=redis://localhost:6379/0
+      
+      # API Keys
+      - OPENAI_API_KEY=your-openai-api-key
+      - LINKEDIN_API_KEY=your-linkedin-api-key
+      
+      # Stripe Configuration
+      - STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key_here
+      - STRIPE_SECRET_KEY=sk_test_your_secret_key_here
+      
+      # Unipile Configuration (LinkedIn Integration)
+      - UNIPILE_API_KEY=P0P4J3SX.MX5Dvt2lWBiny9TDqdfRp88uKBEcRFk6TWuMi+5bXiY=
+      - UNIPILE_BASE_URL=https://api10.unipile.com:14090/api/v1
+      - UNIPILE_WEBHOOK_URL=https://0b72c5ff662f.ngrok-free.app/api/jobs/webhooks
+      
+      # Additional Django Settings
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
 
+networks:
+  backend_network:
+    driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16

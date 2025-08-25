@@ -24,4 +24,5 @@ urlpatterns = [
     path("token/verify/", supabase_views.supabase_verify_token, name="verify_token"),
     # OAuth
     path("oauth/", supabase_views.supabase_oauth_login, name="oauth_login"),
+    # Email confirmation
 ]
