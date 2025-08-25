@@ -20,6 +20,10 @@ Pillow = "^10.1.0"
 gunicorn = "^21.2.0"
 supabase = "^2.18.1"
 gotrue = "^2.12.4"
+stripe = "^12.4.0"
+django-filter = "^25.1"
+requests = "^2.32.5"
+pyjwt = "^2.10.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0.0"

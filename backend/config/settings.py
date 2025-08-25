@@ -17,7 +17,7 @@ DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1",
+    default="localhost,127.0.0.1,0b72c5ff662f.ngrok-free.app",
     cast=lambda v: [s.strip() for s in v.split(",")],
 )
 
@@ -35,10 +35,13 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "drf_spectacular",
     "corsheaders",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
     "apps.authentication",
+    "apps.payments",
+    "apps.jobs",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -85,6 +88,11 @@ DATABASES = {
         "PORT": config("DB_PORT", default="6543"),
         "OPTIONS": {
             "sslmode": config("DB_SSL_MODE", default="require"),
+            "connect_timeout": 30,
+            "keepalives": 1,
+            "keepalives_idle": 30,
+            "keepalives_interval": 10,
+            "keepalives_count": 5,
         },
     }
 }
@@ -126,6 +134,7 @@ AUTH_USER_MODEL = "authentication.User"
 # REST Framework Configuration
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "apps.authentication.supabase_auth_backend.SupabaseJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ],
@@ -171,6 +180,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
 ]
 
+# For development - allow all origins (remove in production)
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Allow Authorization header for Bearer tokens
@@ -186,13 +198,36 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
+# Additional CORS settings for development
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+# Allow credentials and cookies
+CORS_ALLOW_CREDENTIALS = True
+
+# Expose headers
+CORS_EXPOSE_HEADERS = [
+    "content-type",
+    "content-disposition",
+]
+
 # Logging Configuration
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {process:d} {message}",
             "style": "{",
         },
         "simple": {
@@ -204,7 +239,7 @@ LOGGING = {
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
+            "filename": LOGS_DIR / "django.log",
             "formatter": "verbose",
         },
         "console": {
